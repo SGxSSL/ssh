@@ -78,6 +78,5 @@ npm start
 To test the agent's reminders and escalations without waiting days, use this command to backdate all pending requests into a "breached" or "warning" state:
 
 ```bash
-# Windows (Backdates PENDING items by ~50 hours)
-.venv/Scripts/python -c "import sqlite3; conn = sqlite3.connect('backend/approvals.db'); conn.execute(\"UPDATE approvals SET submitted_at = '2026-01-27T10:00:00+00:00' WHERE status = 'PENDING'\"); conn.commit(); conn.close()"
+.venv/Scripts/python backdate_pending.py
 ```
