@@ -94,7 +94,7 @@ def run_agent():
     Each action is recorded in the audit log.
     """
     approvals = data.list_approvals()
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     actions = []
     for a in approvals:
         if a["status"] != "PENDING":

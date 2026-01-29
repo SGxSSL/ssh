@@ -89,15 +89,20 @@ export default function App() {
           </Col>
           <Col span={8}>
             <h4>Agent Activity</h4>
-            <Timeline>
-              {audit.map((it, i) => (
-                <Timeline.Item key={i} dot={<ClockCircleOutlined />} color={it.action === 'reminder' ? 'orange' : it.action === 'escalation' ? 'red' : 'blue'}>
-                  <div><strong>{it.action}</strong> — {it.approval_id}</div>
-                  <div style={{ fontSize: 12, color: '#666' }}>{new Date(it.timestamp).toLocaleString()}</div>
-                  {it.message && <div style={{ marginTop: 6 }}>{it.message}</div>}
-                </Timeline.Item>
-              ))}
-            </Timeline>
+            <Timeline
+              items={audit.map((it, i) => ({
+                key: i,
+                dot: <ClockCircleOutlined />,
+                color: it.action === 'reminder' ? 'orange' : it.action === 'escalation' ? 'red' : 'blue',
+                children: (
+                  <>
+                    <div><strong>{it.action}</strong> — {it.approval_id}</div>
+                    <div style={{ fontSize: 12, color: '#666' }}>{new Date(it.timestamp).toLocaleString()}</div>
+                    {it.message && <div style={{ marginTop: 6 }}>{it.message}</div>}
+                  </>
+                )
+              }))}
+            />
           </Col>
         </Row>
       </Content>
