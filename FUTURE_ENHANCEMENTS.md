@@ -1,7 +1,17 @@
-# Future Enhancements
+# Roadmap & Future Enhancements
 
-- [x] Email / Teams integration: deliver reminders & escalations to real inboxes or chat channels.
-- Role-based access: enforce RBAC so approvals can only be actioned by authorized users.
-- Real SLA configs: per-department or per-vendor SLA settings.
-- ERP / procurement system integration: sync approval requests from an external system.
-- Multi-agent extensions: introduce separate agents for reminding, negotiating, and analytics.
+### Accomplished (Hackathon Version)
+- [x] **AI-Generated Notifications**: GPT-5 powered professional reminders.
+- [x] **Microsoft Teams Integration**: Adaptive cards pushed via Webhooks.
+- [x] **Role-Based Isolation**: Secure dashboards for requesters vs approvers.
+- [x] **SLA Progress UI**: Visual indicators for real-time tracking.
+
+### Phase 2: Engagement
+- [ ] **Interactive Teams Cards**: Allow users to click "Approve" directly inside the Microsoft Teams notification (Actionable Messages).
+- [ ] **Email-to-Approval**: Parse incoming reply emails (Outlook integration) to update approval status.
+- [ ] **Mobile App Bundle**: Native wrapper using Capacitor or React Native.
+
+### Phase 3: Advanced Intelligence
+- [ ] **Multi-Agent Negotiation**: A requester-agent and an approver-agent negotiating terms or providing automated "Oasis" context for complex requests.
+- [ ] **Cost Optimization Recommendations**: Agent suggests alternative vendors if the amount exceeds historical averages.
+- [ ] **SLA Forecasting**: Predictive alerts when an approval is likely to breach based on historical manager behavior.

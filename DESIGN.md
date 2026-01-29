@@ -1,35 +1,32 @@
-# Design: AI-Powered Purchasing Committee Approval Facilitation Agent
+# System Design: AI Approval Agent
 
-High-level system design
-- Backend (FastAPI) manages approvals and an audit log (SQLite). An agent (modeled with LangGraph) evaluates pending approvals and takes actions.
-- Frontend (React + Ant Design) displays approvals, SLA timers, and an Agent Activity timeline. The frontend polls the backend for near-real-time updates.
+### Overview
+The AI Approval Agent is a proactive middleware layer designed to sit between requesters and approvers. It utilizes an autonomous logic loop to ensure no approval request remains stagnant.
 
-Agent responsibilities
-- Periodically evaluate pending approvals.
-- Generate reminders when pending >= 50% SLA.
-- Escalate when pending > SLA, incrementing escalation level and marking status as `ESCALATED`.
-- Log every action to the audit trail.
+### Architecture
+- **Backend (FastAPI)**: Serves as the source of truth, managing the SQLite state (Approvals & Audit Logs) and orchestrating the Agent logic.
+- **Frontend (React)**: A high-fidelity dashboard that provides real-time SLA visualization and identifies "Active" vs "Escalated" items.
+- **Agent Intelligence**: The core decision loop that evaluates "Pending vs SLA" thresholds and generates contextually relevant notifications.
 
-Approval lifecycle states
-- PENDING: initial state while awaiting approvals.
-- APPROVED: final state set by a human action.
-- ESCALATED: set by the agent when SLA is breached.
+### Security and RBAC
+The system implements a simple but robust Role-Based Access Control model:
+1. **Requester**: Can only `CREATE` and `READ` their own items.
+2. **Approver Roles** (Reviewer, Chair, Finance): Can `READ` all items and `APPROVE` requests.
+3. **Identity Privacy**: Dashboard filtering ensures Requesters cannot see sensitive vendor data from other departments.
 
-SLA & escalation strategy
-- SLA measured in hours from `submitted_at`.
-- Reminder threshold: 50% of SLA.
-- Escalation threshold: > SLA.
-- Escalation levels: 0 (none) -> 1 (chair) -> 2 (finance head).
+### Notification Ecosystem
+The agent is designed for multi-channel reach:
+- **Microsoft Teams**: Principal notification channel using Adaptive Cards via Webhooks.
+- **Outlook**: Secondary channel (SMTP stub) for legacy compatibility.
+- **Routing Logic**: Reminders are sent to specific assigned reviewers; escalations move automatically up the management hierarchy.
 
-Why AI (LLM) is used and where it is NOT used
-- Used only to create human-friendly reminder and escalation messages (templating + LLM).
-- Not used to approve requests or perform autonomous decisions — humans retain final authority.
+### AI Implementation (Azure OpenAI)
+We use the **GPT-5.2** deployment on Azure OpenAI to provide an "Administrative Intelligence" layer.
+- **Input**: Raw approval data (Vendor, Amount, SLA status).
+- **Persona**: Professional Administrative Assistant.
+- **Output**: Polite, business-ready reminders that encourage action without sounding robotic.
 
-Data model explanation
-- `ApprovalRequest`: id, vendor_name, amount, approvers[], status, submitted_at, sla_hours, last_reminder_at, escalation_level.
-- `AuditEntry`: timestamp, approval_id, actor, action, message, meta.
-
-Frontend component design
-- Dashboard: AntD Table showing vendor, amount, status (color-coded), SLA, pending hours, escalation level, actions (Approve).
-- Agent Activity: AntD Timeline showing audit entries in reverse chronological order.
-- Controls: Buttons to create dummy approvals and manually run the agent.
+### Data Model
+- **Approvals**: Includes a `requester` tag and `escalation_level`.
+- **Users**: Multi-role storage with associated `email` addresses for notification routing.
+- **Audit**: Tracks not just human actions, but every `agent` decision, providing an "Explainable AI" log.

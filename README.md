@@ -1,71 +1,83 @@
-# AI-Powered Purchasing Committee Approval Facilitation Agent
+# AI-Powered Approval Orchestration Agent
 
-Problem statement
-- Procurement approvals often stall because reviewers forget, are overloaded, or lack visible SLAs. This prototype demonstrates an agent-driven assistant that tracks approvals, issues reminders, and escalates when SLAs are breached to accelerate decision-making.
+### Problem Statement
+Procurement and internal approvals often stall because reviewers are overloaded or lack visible SLAs. This prototype demonstrates an **Agentic Assistant** that proactively tracks approval lifecycles, issues professional AI-generated reminders, and automatically escalates breaches to higher management.
 
-Why approvals get delayed
-- Human attention is finite: reviewers miss emails or deprioritize approvals.
-- Lack of visible SLAs and auditability reduces urgency and accountability.
+### The Solution: Gravity-Powered Approvals
+Our agent acts as a "Digital Secretary" for the Purchasing Committee:
+- **Autonomous Monitoring**: Continuously scans SLA thresholds.
+- **AI-Refined Communication**: Uses **Azure OpenAI (GPT-5.2)** to transform raw alerts into professional business messages.
+- **Multichannel Reach**: Proactively notifies reviewers via **Microsoft Teams** (and optionally Outlook).
+- **Escalation Management**: Automatically routes stagnant requests to Chairs and Finance heads.
 
-Solution overview
-- An explainable agent monitors pending approvals, issues reminders when an approval reaches 50% of its SLA, and escalates when SLA is breached. All agent actions are recorded in a full audit trail. LLMs are used only to generate reminder/escalation text.
-
-Architecture (ASCII)
-
-Backend (FastAPI) <--> Frontend (React + Ant Design)
+### Architecture
+```
+Backend (FastAPI) <--> Frontend (React + AntD Premium)
       |                              ^
       |                              |
-      +-- LangGraph agent (state machine) --+ 
+      +-- LangGraph Agent (Logic) ---+ 
       |                              |
-  SQLite (lightweight)          Polling (5s)
+  SQLite (DB)                  Teams Webhooks / Azure OpenAI
+```
 
-Tech stack
-- Frontend: React + Ant Design
-- Backend: Python + FastAPI
-- Agent modeling: LangGraph (state-machine style)
-- Data: SQLite (demo/synthetic data)
+### Tech Stack
+- **Frontend**: React, Ant Design (Glassmorphism UI), Axios
+- **Backend**: Python, FastAPI, SQLite
+- **Intelligence**: Azure OpenAI (GPT-5.2 Deployment)
+- **Integrations**: Microsoft Teams (Incoming Webhooks), Outlook (SMTP)
+- **State Management**: LangGraph-inspired deterministic execution
 
-Setup
-- Backend
-  - Create a Python 3.10+ venv and install dependencies:
+### Setup & Installation
 
+#### 1. Backend Setup
 ```bash
+# Create and activate virtual environment
 python -m venv .venv
-.venv\Scripts\activate
+source .venv/Scripts/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
 pip install -r backend/requirements.txt
 ```
 
-  - (Optional) set `OPENAI_API_KEY` to enable LLM-generated text.
-
-  - Run the backend:
-
+#### 2. Configure Environment
+Create a `.env` file in the root directory:
 ```bash
-uvicorn backend.main:app --reload --port 8000
+# Azure OpenAI (Required for AI reminders)
+AZURE_OPENAI_API_KEY=your_key
+AZURE_OPENAI_ENDPOINT=your_endpoint
+AZURE_OPENAI_DEPLOYMENT=gpt-5.2
+AZURE_OPENAI_API_VERSION=2024-12-01-preview
+
+# Microsoft Teams
+TEAMS_WEBHOOK_URL=your_webhook_url
 ```
 
-- Frontend
-  - From `d:/ssh/frontend` run:
-
+#### 3. Run the Application
 ```bash
+# Start Backend
+uvicorn backend.main:app --reload --port 8000
+
+# Start Frontend (in /frontend directory)
 npm install
 npm start
 ```
 
-How to run the demo
-1. Start the backend (above).
-2. Start the frontend (above). The UI polls the backend every 5 seconds.
-3. Click "Create Dummy Approval" to add a synthetic approval.
-4. Click "Run Agent" to execute reminders/escalations immediately.
-5. Watch the Agent Activity timeline for audit entries.
+### Role-Based Access (Demo Credentials)
+| Role | Username | Password | Permissions |
+| :--- | :--- | :--- | :--- |
+| **Requester** | `requester1` | `pass123` | Submit requests, View personal dashboard |
+| **Reviewer** | `reviewer` | `pass123` | Approve items, Invoke Agent, Global view |
+| **Finance Head** | `finance` | `pass123` | High-level approvals, Full visibility |
 
-Sample demo flow
-1. Create a dummy approval (SLA 24–72 hours).
-2. After time passes (or by running the agent multiple times), when pending ≥ 50% SLA the agent issues a reminder (audit entry).
-3. If pending > SLA, the agent escalates and sets status to `ESCALATED` (audit entry).
-4. Manual approval is always possible via the UI's Approve button.
+### Key Features
+- **Isolated Dashboards**: Requesters only see their own items.
+- **SLA Progress Intelligence**: Visual bars transition from Green -> Yellow -> Red in real-time.
+- **Agent Audit Trail**: Complete transparency into every AI decision and notification sent.
 
-Key assumptions & limitations
-- Hackathon prototype: not production hardened.
-- Notifications are simulated and visible only via audit logs.
-- LLM is optional — deterministic templates used when no API key is provided.
-- LangGraph is used to model decision logic; a lightweight fallback is present.
+### Testing SLA Reactivity (Time Travel)
+To test the agent's reminders and escalations without waiting days, use this command to backdate all pending requests into a "breached" or "warning" state:
+
+```bash
+# Windows (Backdates PENDING items by ~50 hours)
+.venv/Scripts/python -c "import sqlite3; conn = sqlite3.connect('backend/approvals.db'); conn.execute(\"UPDATE approvals SET submitted_at = '2026-01-27T10:00:00+00:00' WHERE status = 'PENDING'\"); conn.commit(); conn.close()"
+```

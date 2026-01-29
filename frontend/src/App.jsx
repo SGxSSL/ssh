@@ -168,12 +168,18 @@ export default function App() {
       align: 'right',
       render: (_, r) => (
         <Space>
+          {r.status === 'ESCALATED' && <Tag color="error" icon={<AlertOutlined />}>Escalated</Tag>}
+          {r.status === 'APPROVED' && <Tag color="success" icon={<CheckCircleOutlined />}>Approved</Tag>}
+
           {isApprover && r.status !== 'APPROVED' && (
             <Button type="primary" size="middle" shape="round" onClick={() => onApprove(r.id)} icon={<CheckCircleOutlined />}>
               Approve
             </Button>
           )}
-          {user?.role === 'REQUESTER' && <Tag icon={<InfoCircleOutlined />}>In Review</Tag>}
+
+          {user?.role === 'REQUESTER' && r.status === 'PENDING' && (
+            <Tag color="processing" icon={<InfoCircleOutlined />}>In Review</Tag>
+          )}
         </Space>
       )
     }
@@ -322,22 +328,24 @@ export default function App() {
             >
               <div className="timeline-panel">
                 <Timeline
-                  items={audit.map((it, i) => ({
-                    key: i,
-                    dot: <ClockCircleOutlined style={{ fontSize: '16px' }} />,
-                    color: it.action === 'reminder' ? 'orange' : it.action === 'escalation' ? 'red' : 'blue',
-                    children: (
-                      <div className={`agent-activity-item ${it.action}`}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <span style={{ fontWeight: 700, fontSize: '13px', textTransform: 'uppercase' }}>{it.action}</span>
-                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>{new Date(it.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  items={audit
+                    .filter(it => it.actor === 'agent')
+                    .map((it, i) => ({
+                      key: i,
+                      dot: <ClockCircleOutlined style={{ fontSize: '16px' }} />,
+                      color: it.action === 'reminder' ? 'orange' : it.action === 'escalation' ? 'red' : 'blue',
+                      children: (
+                        <div className={`agent-activity-item ${it.action}`}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <span style={{ fontWeight: 700, fontSize: '13px', textTransform: 'uppercase' }}>{it.action}</span>
+                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>{new Date(it.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#475569', lineHeight: 1.4 }}>
+                            {it.message || `Processed approval ${it.approval_id.slice(0, 8)}...`}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#475569', lineHeight: 1.4 }}>
-                          {it.message || `Processed approval ${it.approval_id.slice(0, 8)}...`}
-                        </div>
-                      </div>
-                    )
-                  }))}
+                      )
+                    }))}
                 />
               </div>
             </Card>
