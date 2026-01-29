@@ -5,3 +5,4 @@ sqlalchemy
 langgraph
 requests
 python-dotenv
+openai

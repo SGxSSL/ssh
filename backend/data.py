@@ -50,7 +50,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
             password TEXT,
-            role TEXT
+            role TEXT,
+            email TEXT
         )
         """
     )
@@ -60,12 +61,18 @@ def init_db():
     if "requester" not in columns:
         cur.execute("ALTER TABLE approvals ADD COLUMN requester TEXT")
 
-    # Seed default users if not exists
-    cur.execute("INSERT OR IGNORE INTO users VALUES ('requester1', 'pass123', 'REQUESTER')")
-    cur.execute("INSERT OR IGNORE INTO users VALUES ('requester2', 'pass123', 'REQUESTER')")
-    cur.execute("INSERT OR IGNORE INTO users VALUES ('reviewer', 'pass123', 'APPROVER')")
-    cur.execute("INSERT OR IGNORE INTO users VALUES ('chair', 'pass123', 'CHAIR')")
-    cur.execute("INSERT OR IGNORE INTO users VALUES ('finance', 'pass123', 'FINANCE')")
+    # Migration: Ensure email column exists
+    cur.execute("PRAGMA table_info(users)")
+    u_cols = [row[1] for row in cur.fetchall()]
+    if "email" not in u_cols:
+        cur.execute("ALTER TABLE users ADD COLUMN email TEXT")
+
+    # Seed default users if not exists (with dummy emails)
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('requester1', 'pass123', 'REQUESTER', 'requester1@example.com')")
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('requester2', 'pass123', 'REQUESTER', 'requester2@example.com')")
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('reviewer', 'pass123', 'APPROVER', 'reviewer@example.com')")
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('chair', 'pass123', 'CHAIR', 'chair@example.com')")
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('finance', 'pass123', 'FINANCE', 'finance@example.com')")
     
     conn.commit()
     conn.close()
