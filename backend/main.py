@@ -4,6 +4,9 @@ from uuid import uuid4
 from datetime import datetime, timezone
 import random
 import json
+from typing import Optional
+
+from pydantic import BaseModel
 
 from . import data
 from .models import ApprovalRequest, Approver
@@ -20,6 +23,19 @@ app.add_middleware(
 )
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/login")
+def login(req: LoginRequest):
+    user = data.get_user(req.username)
+    if not user or user["password"] != req.password:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return {"username": user["username"], "role": user["role"]}
+
+
 data.init_db()
 
 
@@ -28,7 +44,7 @@ def now_iso():
 
 
 @app.post("/approvals")
-def create_dummy_approval():
+def create_dummy_approval(requester: str):
     """Create a synthetic approval request for demo purposes."""
     aid = str(uuid4())
     vendors = ["Acme Supplies", "Global Widgets", "NorthTech", "Zenith Services"]
@@ -49,21 +65,22 @@ def create_dummy_approval():
         "sla_hours": sla,
         "last_reminder_at": None,
         "escalation_level": 0,
+        "requester": requester,
     }
     data.save_approval(obj)
     data.log_audit({
         "timestamp": now_iso(),
         "approval_id": aid,
-        "actor": "system",
+        "actor": requester,
         "action": "created",
-        "message": f"Dummy approval created for {vendor} ${amount}",
+        "message": f"Approval created by {requester} for {vendor} ${amount}",
     })
     return obj
 
 
 @app.get("/approvals")
-def list_all_approvals():
-    return data.list_approvals()
+def list_all_approvals(requester: Optional[str] = None):
+    return data.list_approvals(requester_filter=requester)
 
 
 @app.post("/approvals/{approval_id}/approve")

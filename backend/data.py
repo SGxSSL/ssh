@@ -27,7 +27,8 @@ def init_db():
             submitted_at TEXT,
             sla_hours INTEGER,
             last_reminder_at TEXT,
-            escalation_level INTEGER
+            escalation_level INTEGER,
+            requester TEXT
         )
         """
     )
@@ -44,15 +45,48 @@ def init_db():
         )
         """
     )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            password TEXT,
+            role TEXT
+        )
+        """
+    )
+    # Migration: Ensure requester column exists
+    cur.execute("PRAGMA table_info(approvals)")
+    columns = [row[1] for row in cur.fetchall()]
+    if "requester" not in columns:
+        cur.execute("ALTER TABLE approvals ADD COLUMN requester TEXT")
+
+    # Seed default users if not exists
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('requester1', 'pass123', 'REQUESTER')")
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('requester2', 'pass123', 'REQUESTER')")
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('reviewer', 'pass123', 'APPROVER')")
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('chair', 'pass123', 'CHAIR')")
+    cur.execute("INSERT OR IGNORE INTO users VALUES ('finance', 'pass123', 'FINANCE')")
+    
     conn.commit()
     conn.close()
+
+
+def get_user(username: str) -> Optional[Dict[str, Any]]:
+    conn = _conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE username = ?", (username,))
+    r = cur.fetchone()
+    conn.close()
+    if not r:
+        return None
+    return dict(r)
 
 
 def save_approval(obj: Dict[str, Any]):
     conn = _conn()
     cur = conn.cursor()
     cur.execute(
-        "REPLACE INTO approvals(id, vendor_name, amount, approvers, status, submitted_at, sla_hours, last_reminder_at, escalation_level) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "REPLACE INTO approvals(id, vendor_name, amount, approvers, status, submitted_at, sla_hours, last_reminder_at, escalation_level, requester) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             obj["id"],
             obj["vendor_name"],
@@ -63,16 +97,20 @@ def save_approval(obj: Dict[str, Any]):
             obj["sla_hours"],
             obj.get("last_reminder_at"),
             obj.get("escalation_level", 0),
+            obj.get("requester"),
         ),
     )
     conn.commit()
     conn.close()
 
 
-def list_approvals() -> List[Dict[str, Any]]:
+def list_approvals(requester_filter: Optional[str] = None) -> List[Dict[str, Any]]:
     conn = _conn()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM approvals ORDER BY submitted_at DESC")
+    if requester_filter:
+        cur.execute("SELECT * FROM approvals WHERE requester = ? ORDER BY submitted_at DESC", (requester_filter,))
+    else:
+        cur.execute("SELECT * FROM approvals ORDER BY submitted_at DESC")
     rows = cur.fetchall()
     conn.close()
     out = []
@@ -88,6 +126,7 @@ def list_approvals() -> List[Dict[str, Any]]:
                 "sla_hours": r["sla_hours"],
                 "last_reminder_at": r["last_reminder_at"],
                 "escalation_level": r["escalation_level"],
+                "requester": r["requester"],
             }
         )
     return out
